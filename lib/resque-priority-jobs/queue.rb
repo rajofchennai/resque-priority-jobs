@@ -27,7 +27,8 @@ module Resque
         end
       end
     end
-    alias_method_chain :pop, :priority
+    alias :pop_without_priority :pop
+    alias :pop :pop_with_priority
 
     # not optimial has an extra redis call for priority call. Assumtion is that there are lesser queues using priority
     def length

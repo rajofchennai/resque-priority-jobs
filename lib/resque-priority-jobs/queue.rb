@@ -1,11 +1,9 @@
 module Resque
-  class RedisThreadSafetyViolationError < StandardError
-  end
   class Queue
     # adds entry into redis
     def push_with_priority priority, object
       synchronize do
-        @redis.zadd @redis_name, normalize(priority), encode(object)
+        @redis.zadd @redis_name, priority, encode(object)
       end
     end
 
@@ -13,18 +11,9 @@ module Resque
     def pop_with_priority non_block = false
       return pop_without_priority non_block unless is_a_priority_queue?
       synchronize do
-        begin
-          @redis.watch @redis_name
-          value = @redis.zrangebyscore(@redis_name, MAX_PRIORITY, MIN_PRIORITY, {:limit => [0, 1]}).first until non_block || value
-          raise ThreadError if non_block && !value
-          status = @redis.multi do
-            @redis.zrem @redis_name, value
-          end
-          raise RedisThreadSafetyViolationError unless status
-          decode value
-        rescue RedisThreadSafetyViolationError
-          retry
-        end
+        value = Resque::JobFetch.fetch_one_job @redis, @redis_name until non_block || value
+        raise ThreadError if non_block && !value
+        decode value
       end
     end
     alias :pop_without_priority :pop
@@ -47,17 +36,5 @@ module Resque
       type == 'none' ? nil : type
     end
 
-    private
-
-    # restricting the maximum and minimum priority. I do't think this is needed, extending priority to -inf to +inf should not cause any problems
-    def normalize priority
-      if priority > MIN_PRIORITY
-        MIN_PRIORITY
-      elsif priority < MAX_PRIORITY
-        MAX_PRIORITY
-      else
-        priority
-      end
-    end
   end
 end

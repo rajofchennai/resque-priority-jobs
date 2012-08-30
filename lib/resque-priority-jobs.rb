@@ -29,4 +29,19 @@ module Resque
   def push_with_priority queue, priority, item
     queue(queue).push_with_priority priority, item
   end
+
+  module JobFetch
+    def get_one_job redis, queue
+      #lua script to get item with maximum priority
+      get_and_rem = "local resp = redis.call('zrangebyscore', KEYS[1], '-inf', '+inf', 'LIMIT', '0', '1');
+        if (resp[1] ~= nil) then
+          local val = resp[# resp]
+          redis.call('zrem', KEYS[1], val)
+          return val
+        else
+          return false
+        end"
+      redis.eval get_and_rem, [queue]
+    end
+  end
 end

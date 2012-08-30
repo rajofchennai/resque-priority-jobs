@@ -9,19 +9,10 @@ module Resque
       priority_queue_names.compact!
       priority_queue_names.each do |queue_name|
         synchronize do
-          begin
-            @redis.watch queue_name
-            payload = @redis.zrangebyscore(queue_name, MAX_PRIORITY, MIN_PRIORITY, {:limit => [0, 1]}).first
-            if payload
-              queue = @queue_hash[queue_name]
-              status = @redis.multi do
-                @redis.zrem queue_name, payload
-              end
-              raise RedisThreadSafetyViolationError unless status
-              return [queue, queue.decode(payload)]
-            end
-          rescue RedisThreadSafetyViolationError
-            retry
+          payload = Resque::JobFetch.fetch_one_job @redis, @redis_name
+          if payload
+            queue = @queue_hash[queue_name]
+            return [queue, queue.decode(payload)]
           end
         end
       end

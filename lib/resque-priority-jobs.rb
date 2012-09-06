@@ -31,7 +31,7 @@ module Resque
   end
 
   module JobFetch
-    def get_one_job redis, queue
+    def fetch_one_job redis, queue
       #lua script to get item with maximum priority
       get_and_rem = "local resp = redis.call('zrangebyscore', KEYS[1], '-inf', '+inf', 'LIMIT', '0', '1');
         if (resp[1] ~= nil) then

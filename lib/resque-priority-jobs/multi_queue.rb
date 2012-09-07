@@ -9,7 +9,7 @@ module Resque
       priority_queue_names.compact!
       priority_queue_names.each do |queue_name|
         synchronize do
-          payload = Resque::JobFetch.fetch_one_job @redis, @redis_name
+          payload = Resque::JobFetch.fetch_one_job @redis, queue_name
           if payload
             queue = @queue_hash[queue_name]
             return [queue, queue.decode(payload)]

@@ -24,6 +24,27 @@ module Resque
     end
     alias :size :length
 
+    def slice_with_priority(start, length)
+      if @redis.type(@redis_name) == 'zset'
+        if length == 1
+          synchronize do
+            @redis.zrangebyscore(@redis_name, '-inf', '+inf',  :limit =>[0,1] )
+          end
+        else
+          synchronize do
+            Array(@redis.zrangebyscore(@redis_name, '-inf', '+inf', :limit => [0, length])).map do |item|
+              decode item
+            end
+          end
+        end
+      else
+        slice_without_priority(start, length)
+      end
+    end
+
+    alias :slice_without_priority :slice
+    alias :slice :slice_with_priority
+
     # To identify whether a queue is priority queue or not. Empty queues are always non-priority
     # Assumption : Once a queue type is set to be a priority queue, it cannot be changed and vice-versa.
     def is_a_priority_queue?
@@ -35,6 +56,5 @@ module Resque
       type = @redis.type(@redis_name)
       type == 'none' ? nil : type
     end
-
   end
 end

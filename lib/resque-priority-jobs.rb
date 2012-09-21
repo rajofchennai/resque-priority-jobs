@@ -10,7 +10,7 @@ MAX_PRIORITY = 1
 module Resque
   # Queues which need priority scheduling need to use this method instead of enqueue
   #FIXME: Known issue - If a use is already enqueued without priority and then we do a enqueue with priority we get an error of different datatype from redis.
-  def enqueue_with_priority klass, priority = MIN_PRIORITY, *args
+  def enqueue_with_priority(klass, priority = MIN_PRIORITY, *args)
     queue = queue_from_class(klass)
     before_hooks = Plugin.before_enqueue_hooks(klass).collect do |hook|
       klass.send(hook, *args)
@@ -26,12 +26,12 @@ module Resque
     return true
   end
 
-  def push_with_priority queue, priority, item
+  def push_with_priority(queue, priority, item)
     queue(queue).push_with_priority priority, item
   end
 
   class JobFetch
-    def self.fetch_one_job redis, queue
+    def self.fetch_one_job(redis, queue)
       #lua script to get item with maximum priority
       get_and_rem = "local resp = redis.call('zrangebyscore', KEYS[1], '-inf', '+inf', 'LIMIT', '0', '1');
         if (resp[1] ~= nil) then

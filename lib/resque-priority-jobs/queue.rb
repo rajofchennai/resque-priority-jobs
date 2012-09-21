@@ -19,10 +19,10 @@ module Resque
     alias :pop_without_priority :pop
     alias :pop :pop_with_priority
 
-    # not optimial has an extra redis call for priority call. Assumtion is that there are lesser queues using priority
     def length
-      @redis.llen @redis_name rescue @redis.zcard @redis_name
+      @redis.type(@redis_name) == 'list' ? @redis.llen(@redis_name) : @redis.zcard(@redis_name)
     end
+    alias :size :length
 
     # To identify whether a queue is priority queue or not. Empty queues are always non-priority
     # Assumption : Once a queue type is set to be a priority queue, it cannot be changed and vice-versa.

@@ -2,6 +2,7 @@ require 'resque'
 require 'resque-priority-jobs/queue'
 require 'resque-priority-jobs/multi_queue'
 require 'resque-priority-jobs/job'
+require 'resque-priority-jobs/failure/redis'
 
 # Max priority is the highest priority similarly for min priority. These numbers are arbitrary
 MIN_PRIORITY = 20

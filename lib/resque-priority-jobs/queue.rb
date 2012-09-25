@@ -7,6 +7,18 @@ module Resque
       end
     end
 
+    def push object
+      raise QueueDestroyed if destroyed?
+      puts object.inspect
+      return push_with_priority object['priority'].to_i, object if object['priority']
+      synchronize do
+        @redis.rpush @redis_name, encode(object)
+      end
+    end
+
+    alias :<< :push
+    alias :enq :push
+
     # remove entry from queue use default pop in case of non-priority queue see alias_method_chain
     def pop_with_priority non_block = false
       return pop_without_priority non_block unless is_a_priority_queue?

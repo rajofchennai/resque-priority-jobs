@@ -9,7 +9,6 @@ module Resque
 
     def push object
       raise QueueDestroyed if destroyed?
-      puts object.inspect
       return push_with_priority object['priority'].to_i, object if object['priority']
       synchronize do
         @redis.rpush @redis_name, encode(object)
